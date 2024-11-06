@@ -1,6 +1,4 @@
 {% load static %}
-<!-- {% debug %} -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,18 +6,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Draw Multiple Bounding Boxes</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="../static/style.css">
-    <script src="../static/draw_bbox.js" defer></script>
-    <script src="../static/pass_bbox_value.js" defer></script>
+    <!-- Font Awesome CDN for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <script src="{% static 'draw_bbox.js' %}" defer></script>
+    <script src="{% static 'pass_bbox_value.js' %}" defer></script>
 </head>
+<!-- <body data-image-path="{{ image_path }}" data-image-index="{{ image_index }}"> -->
 <body>
+    <p data-image-path="{{ image_path }}" data-image-index="{{ image_index }}"></p>
     <!-- Navbar -->
     <nav>
         <button id="drawBboxBtn">Draw BBox</button>
-        <button id="SendBbox">Save BBox</button>
-        <button id="fetchBbox">show_Img</button>
+        <button id="SaveBbox">Save BBox</button>
+        <button id="fetchBbox">Show Image</button>
+        <button id="prevBtn"><i class="fas fa-arrow-left"></i> Previous</button>
+        <button id="nextBtn">Next <i class="fas fa-arrow-right"></i></button>
+        <button id="Annotate_Batch_Img">Annotate Batch</button>
     </nav>
     <canvas id="myCanvas" width="1280" height="720"></canvas>
-
 </body>
 </html>

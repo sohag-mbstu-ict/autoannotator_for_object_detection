@@ -1,11 +1,21 @@
 // const canvas = document.getElementById('myCanvas');
 // const ctx = canvas.getContext('2d');
+let currentImageIndex = null
 
 const canvas = document.getElementById('myCanvas');
 const ctx = canvas.getContext('2d');
 
 const img = new Image();
-img.src = "/static/13.png"; // Use Django's static tag to load the image
+// img.src = "/static/13.png"; // Use Django's static tag to load the image
+
+// fetch the images
+$(document).ready(function() {
+    // Access the image path from the `data-image-path` attribute on the <body> tag
+    img.src = $('p').data('image-path');
+    currentImageIndex = $('p').data('image-index');
+    console.log("currentImageIndex : ",currentImageIndex)
+});
+
 
 const imgWidth = 1280;
 const imgHeight = 720;
@@ -38,6 +48,7 @@ function drawBbox(bbox) {
 
 
 let mouseX, mouseY;
+let bbox_draw_mode_flag = false;
 let startX, startY;
 let isDrawing = false;
 let isResizing = false;
@@ -52,9 +63,7 @@ const hoverHandleSize = 15; // Larger size for hovered handle
 // Button to enable drawing bbox
 const drawBboxBtn = document.getElementById('drawBboxBtn');
 drawBboxBtn.addEventListener('click', () => {
-
     console.log("Draw Mode clicked clicked clicked clicked");
-
     mouseX, mouseY = null,null;
     startX, startY = null,null;
     selectedHandle = null;
@@ -66,6 +75,7 @@ drawBboxBtn.addEventListener('click', () => {
     // hoveredHandle = null; // To track the currently hovered handle
     if (!isDrawing && !drawMode) { // Enable drawing only if not already drawing
         drawMode = true; // Enable draw mode
+        bbox_draw_mode_flag = true;
         // console.log("Draw Mode Enabled");
     } else if (isDrawing) {
         finalizeBbox(); // Finalize the current bbox
@@ -281,7 +291,7 @@ function resizeBbox() {
 // Function to draw guides (optional dashed lines for precision)
 function drawGuides(x, y) {
     ctx.setLineDash([5, 5]);
-    ctx.strokeStyle = 'gray';
+    ctx.strokeStyle = 'blue';
     ctx.beginPath();
     ctx.moveTo(x, 0);
     ctx.lineTo(x, canvas.height);

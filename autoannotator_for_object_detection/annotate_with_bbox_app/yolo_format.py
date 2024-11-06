@@ -1,24 +1,20 @@
-
+import cv2
 import os
+from shapely.geometry import Polygon
+
+
 class get_Data_In_Yolo_Format:
     def __init__(self):
         pass
 
-    def save_BBox_On_Text_File(self,bboxes_handle):
-        path = "dataset/"
-        file_path=os.path.join(path,"person.txt") 
-        with open(file_path, 'w') as file:
-            file.write("")  # You can write initial content here if needed
-        print(f"{file_path} created successfully.")
-        file.close()      
+    def save_BBox_On_Text_File(self,txt_file_path,bboxes_handle): # when we click saveBbox from browser    
         try:
-            with open(file_path, 'a') as file_:
+            with open(txt_file_path, 'w') as file_:
                 for index,bbox_handle in enumerate(bboxes_handle):
-                    # print("bbox_handle : ",bbox_handle)
                     x1 = bbox_handle['startX'] / 1280
                     y1 = bbox_handle['startY'] / 720
-                    x2 = (bbox_handle['width'] + x1) / 1280
-                    y2 = (bbox_handle['height'] + y1) / 720
+                    x2 = bbox_handle['width'] / 1280
+                    y2 = bbox_handle['height'] / 720
                     file_.write(f"{0} {x1} {y1} {x2} {y2}")
                     if(index+1 < len(bboxes_handle)):
                         file_.write("\n")
@@ -28,48 +24,141 @@ class get_Data_In_Yolo_Format:
 
     def convert_Yolo_Format_To_BBox_Handles(self,bboxes):
         bboxes_dict = {}
-        for index, bbox in enumerate(bboxes):
-            startX  = int(bbox[0])
-            startY  = int(bbox[1])
-            width   = int(bbox[2])
-            height  = int(bbox[3])
-            handles = [
-                    { 'x': startX, 'y': startY },                             # Top-left          
-                    { 'x': startX + width, 'y': startY },                     # Top-right         
-                    { 'x': startX, 'y': startY + height },                    # Bottom-left       
-                    { 'x': startX + width, 'y': startY + height },            # Bottom-right      
-                    { 'x': int(startX + width / 2), 'y': startY },            # Top-middle        
-                    { 'x': startX + width, 'y': int(startY + height / 2) },   # Right-middle      
-                    { 'x': int(startX + width / 2), 'y': startY + height },   # Bottom-middle     
-                    { 'x': startX, 'y': int(startY + height / 2) }            # Left-middle       
-                ]
-            
-            # dict = {startX:startX, startY:startY, width:width, height:height,handles: handles}
-            dict = {'startX':startX, 'startY':startY, 'width':width, 'height':height,'handles': handles}
-            bboxes_dict[index] = dict
+        try:
+            for index, bbox in enumerate(bboxes):
+                startX  = int(bbox[0])
+                startY  = int(bbox[1])
+                width   = int(bbox[2]) 
+                height  = int(bbox[3]) 
+                handles = [
+                        { 'x': startX, 'y': startY },                             # Top-left          
+                        { 'x': startX + width, 'y': startY },                     # Top-right         
+                        { 'x': startX, 'y': startY + height },                    # Bottom-left       
+                        { 'x': startX + width, 'y': startY + height },            # Bottom-right      
+                        { 'x': int(startX + width / 2), 'y': startY },            # Top-middle        
+                        { 'x': startX + width, 'y': int(startY + height / 2) },   # Right-middle      
+                        { 'x': int(startX + width / 2), 'y': startY + height },   # Bottom-middle     
+                        { 'x': startX, 'y': int(startY + height / 2) }            # Left-middle       
+                    ]
+                
+                # dict = {startX:startX, startY:startY, width:width, height:height,handles: handles}
+                dict = {'startX':startX, 'startY':startY, 'width':width, 'height':height,'handles': handles}
+                bboxes_dict[index] = dict
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
         # print("bboxes_dict : ",bboxes_dict)
         return bboxes_dict
 
 
-    def get_BBox_From_Text_File(self):
-        bboxes = []
-        path = "dataset/"
-        file_path=os.path.join(path,"person.txt") 
+    def get_BBox_From_Text_File(self,yolo_txt_path):
+        bboxes = [] 
         try:
             # Open the file and read each line one by one
-            with open(file_path, "r") as file:
+            with open(yolo_txt_path, "r") as file:
                 for line in file:
                     # Remove any trailing whitespace, like newline characters
                     line = line.strip()
                     bbox = [float(value) for value in line.split()]
                     bbox[1] = int(bbox[1]*1280)
                     bbox[2] = int(bbox[2]*720)
-                    bbox[3] = int(bbox[3]*1280)
-                    bbox[4] = int(bbox[4]*720)
+                    bbox[3] = int(bbox[3]*1280) 
+                    bbox[4] = int(bbox[4]*720) 
                     bboxes.append(bbox[1:])
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
         return bboxes
+    
+    
+    def get_Detections(self, image_path,model_detection):  # object detection using yolov8x
+        try:
+            frame = cv2.imread(image_path)
+            results = model_detection.predict(frame,   
+                                save=False,
+                                conf=0.5,
+                                iou=0.8,
+                                classes=[0],
+                                imgsz=1280)
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+        return results
+    
+    def remove_Detections_Based_On_Court_Coordinates(self,detected_bboxes):
+        try:
+            court = Polygon([(359,215), (917,215), (1076,553), (205,551)])
+            bboxes=[]
+            for i,bbox in enumerate(detected_bboxes):
+                x1,y1,x2,y2=bbox[0],bbox[1],bbox[2],bbox[3]
+                bbox_polygon=Polygon([(x1,y1),(x2,y1),(x2,y2),(x1,y2)])
+                is_overlap = court.intersects(bbox_polygon) # Check if polygons overlap
+                if is_overlap:
+                    bbox[2] = bbox[2] - bbox[0]
+                    bbox[3] = bbox[3] - bbox[1]
+                    bboxes.append(bbox)
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+        return bboxes
+
+    def save_Bbox_From_YOLO_model(self,bboxes,txt_file_path):
+        with open(txt_file_path, 'w') as file:
+            file.write("")  # You can write initial content here if needed
+        file.close()      
+        try:
+            with open(txt_file_path, 'a') as file_:
+                for index,bbox in enumerate(bboxes):
+                    # print("bbox_handle : ",bbox_handle)
+                    x1 = bbox[0] / 1280
+                    y1 = bbox[1] / 720
+                    x2 = (bbox[2] - x1) / 1280
+                    y2 = (bbox[3] - x2) / 720
+                    file_.write(f"{0} {x1} {y1} {x2} {y2}")
+                    if(index+1 < len(bboxes)):
+                        file_.write("\n")
+                file_.close()
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+
+
+    def detect_Missing_Object(self, image_path,model_detection,bboxes_handle):  # object detection using yolov8x
+        print("bboxes_handle : ",bboxes_handle)
+        try:
+            frame = cv2.imread(image_path)
+            bbox_index = len(bboxes_handle)-1
+            startX  = int(bboxes_handle[bbox_index]['startX'])
+            startY  = int(bboxes_handle[bbox_index]['startY'])
+            width   = int(bboxes_handle[bbox_index]['width']) 
+            height  = int(bboxes_handle[bbox_index]['height']) 
+            print("startX, startY, width, height : ",startX, startY, width, height)
+            # Calculate the ending coordinates
+            endX = startX + width
+            endY = startY + height
+            # Crop the image
+            cropped_image = frame[startY:endY, startX:endX]
+            cv2.imwrite('img.png', cropped_image)
+            # cv2.imshow('Cropped Image', cropped_image)       # Display the cropped image
+            # cv2.waitKey(10)
+            # cv2.destroyAllWindows()
+            results = model_detection.predict(cropped_image,   
+                                save=False,
+                                conf=0.5,
+                                iou=0.8,
+                                classes=[0])
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+
+        # cv2.imshow('Cropped Image', results[0].plot())       # Display the cropped image
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+        bbox = results[0].boxes.xyxy.tolist()
+        print("bbox[0] 111111111111111111111 : ",bbox)
+        bbox = bbox[0]
+        print("bbox[0] 222222222222222222222 : ",bbox)
+        bboxes_handle[bbox_index]['startX'] = bbox[0] + startX
+        bboxes_handle[bbox_index]['startY'] = bbox[1] + startY
+        bboxes_handle[bbox_index]['width']  = bbox[2] - bbox[0]
+        bboxes_handle[bbox_index]['height'] = bbox[3] - bbox[1]
+        print("bboxes_handle ttttt  : ",bboxes_handle)
+        return bboxes_handle
+
 
     def main_Function_To_get_Data_In_Yolo_Format(self,bboxes_handle):
         self.save_BBox_On_Text_File(bboxes_handle) # save bbox values on text file
