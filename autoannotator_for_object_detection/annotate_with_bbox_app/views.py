@@ -21,8 +21,8 @@ def draw_bbox(request):
         frame_count=frame_count+1
         # if(frame_count<=15):
         #     continue 
-        if(frame_count>2):
-            break 
+        # if(frame_count>2):
+        break 
     image_path = "media/images/" + str(frame_count) + ".png"
     success = cv2.imwrite(image_path, frame)
     return render(request, 'draw_bbox.html', {'image_path': image_path,'image_index': frame_count})
@@ -30,6 +30,22 @@ def draw_bbox(request):
 
 @csrf_exempt  # You may want to configure CSRF token handling for production
 def Save_Bbox(request):
+    yolo_data_obj = get_Data_In_Yolo_Format()
+    if request.method == "POST":
+        # Get the value sent via AJAX
+        bboxes_handle = request.POST.get("value")
+        currentImageIndex = request.POST.get("currentImageIndex")
+        txt_file_path = "media/labels/" + currentImageIndex + ".txt"
+        # Process the value (optional)
+        bboxes_handle = json.loads(bboxes_handle)
+        yolo_data_obj.save_BBox_On_Text_File(txt_file_path,bboxes_handle)
+        bboxes = yolo_data_obj.get_BBox_From_Text_File(txt_file_path)
+        bboxes = yolo_data_obj.convert_Yolo_Format_To_BBox_Handles(bboxes)
+        return JsonResponse({"bbox_list": bboxes})
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
+@csrf_exempt  # You may want to configure CSRF token handling for production
+def Save_Bbox_with_Pretrained_Model(request):
     yolo_data_obj = get_Data_In_Yolo_Format()
     if request.method == "POST":
         # Get the value sent via AJAX
@@ -51,24 +67,60 @@ def Save_Bbox(request):
     return JsonResponse({"error": "Invalid request"}, status=400)
 
 @csrf_exempt  # Only for testing without CSRF; remove in production if possible
-def pass_bbox_value_to_browser(request):
-    if request.method == 'GET':
-        path = "dataset/"
-        file_path=os.path.join(path,"person.txt")
-        bboxes = yolo_data_obj.get_BBox_From_Text_File(file_path)
-        bboxes = yolo_data_obj.convert_Yolo_Format_To_BBox_Handles(bboxes)
-        return JsonResponse({'my_list': bboxes})
+def resetDetection(request):
+    if request.method == 'POST':
+        # Get the `currentImageIndex` from the AJAX request
+        current_image_index = int(request.POST.get('currentImageIndex', 0))
+        print("update_image_index  current_image_index : ",current_image_index)
+        current_image_index
+        image_path    = "media/images/" + str(current_image_index) + ".png"
+        txt_file_path = "media/labels/" + str(current_image_index) + ".txt"
+        results = yolo_data_obj.get_Detections(image_path,model_detection)
+        # cv2.imshow("s",results[0].plot())
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+        bboxes = results[0].boxes.xyxy.tolist()
+        bboxes = yolo_data_obj.remove_Detections_Based_On_Court_Coordinates(bboxes)
+        yolo_data_obj.save_Bbox_From_YOLO_model(bboxes,txt_file_path)
+        return JsonResponse({'image_path': image_path, 'bbox_list': bboxes})
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
     
+
+@csrf_exempt  # Only for testing without CSRF; remove in production if possible
+def DeleteBbox(request):
+    if request.method == 'POST':
+        # Get the `currentImageIndex` from the AJAX request
+        current_image_index = int(request.POST.get('currentImageIndex', 0))
+        selected_bbox_x     = int(request.POST.get('selected_bbox_x', 0))/1280
+        selected_bbox_y     = int(request.POST.get('selected_bbox_y', 0))/720
+        selected_bbox_x1_y1 = (selected_bbox_x,selected_bbox_y)
+        print("selected_bbox_x, selected_bbox_x : ",selected_bbox_x,selected_bbox_y)
+        print("update_image_index  current_image_index : ",current_image_index)
+        current_image_index
+        image_path    = "media/images/" + str(current_image_index) + ".png"
+        txt_file_path = "media/labels/" + str(current_image_index) + ".txt"
+        yolo_data_obj.delete_Selected_Bbox(selected_bbox_x1_y1, txt_file_path)
+        bboxes = yolo_data_obj.get_BBox_From_Text_File(txt_file_path)
+        bboxes = yolo_data_obj.convert_Yolo_Format_To_BBox_Handles(bboxes)
+        has_selected_bbox = 'false'
+        # cv2.imshow("s",results[0].plot())
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+        return JsonResponse({'image_path': image_path, 'bbox_list': bboxes, 'has_selected_bbox':has_selected_bbox})
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
 @csrf_exempt 
 def update_image_index(request):
     if request.method == 'POST':
         # Get the `currentImageIndex` from the AJAX request
         current_image_index = int(request.POST.get('currentImageIndex', 0))
+        print("update_image_index  current_image_index : ",current_image_index)
         image_path    = "media/images/" + str(current_image_index) + ".png"
         txt_file_path = "media/labels/" + str(current_image_index) + ".txt"
         bboxes = yolo_data_obj.get_BBox_From_Text_File(txt_file_path)
         bboxes = yolo_data_obj.convert_Yolo_Format_To_BBox_Handles(bboxes)
-        return JsonResponse({'image_path': image_path, 'bbox_list': bboxes})
+        return JsonResponse({'image_path': image_path, 'bbox_list': bboxes, 'current_image_index':current_image_index})
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 
@@ -76,9 +128,11 @@ def update_image_index(request):
 def auto_Annotate_Next_N_Frames(request):
     if request.method == 'POST':
         # Get the `currentImageIndex` from the AJAX request
-        current_image_index = int(request.POST.get('currentImageIndex', 0)) + 12
+        current_image_index = int(request.POST.get('currentImageIndex', 0))
+        current_image_index_batch = current_image_index + 12
         cap = cv2.VideoCapture("media/tennis.mp4")
         frame_count = 0
+        write_current_image_index = current_image_index
         image_extensions = ('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.webp')
         folder_path = "media/images/"
         # List all files in the directory and filter for image files
@@ -86,7 +140,9 @@ def auto_Annotate_Next_N_Frames(request):
         while True:
             ret, frame = cap.read()
             frame_count=frame_count+1 
-            if(frame_count>current_image_index):
+            cv2.putText(frame, "frame: " + str(write_current_image_index), (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            write_current_image_index+=1
+            if(frame_count>current_image_index_batch):
                 break 
             if(frame_count%10==0):
                 print("--------------- frame_count ------------------ : ",frame_count)

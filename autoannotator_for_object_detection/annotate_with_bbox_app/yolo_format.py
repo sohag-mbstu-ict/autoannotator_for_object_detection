@@ -1,6 +1,7 @@
 import cv2
 import os
 from shapely.geometry import Polygon
+from annotate_with_bbox_app.handle_Bbox_Overlap import handle_Bbox_Overlapp_at_Missing_Detections
 
 
 class get_Data_In_Yolo_Format:
@@ -119,7 +120,7 @@ class get_Data_In_Yolo_Format:
 
 
     def detect_Missing_Object(self, image_path,model_detection,bboxes_handle):  # object detection using yolov8x
-        print("bboxes_handle : ",bboxes_handle)
+        # print("bboxes_handle : ",bboxes_handle)
         try:
             frame = cv2.imread(image_path)
             bbox_index = len(bboxes_handle)-1
@@ -134,30 +135,52 @@ class get_Data_In_Yolo_Format:
             # Crop the image
             cropped_image = frame[startY:endY, startX:endX]
             cv2.imwrite('img.png', cropped_image)
-            # cv2.imshow('Cropped Image', cropped_image)       # Display the cropped image
-            # cv2.waitKey(10)
-            # cv2.destroyAllWindows()
             results = model_detection.predict(cropped_image,   
                                 save=False,
-                                conf=0.5,
+                                conf=0.10,
                                 iou=0.8,
                                 classes=[0])
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-
         # cv2.imshow('Cropped Image', results[0].plot())       # Display the cropped image
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
-        bbox = results[0].boxes.xyxy.tolist()
-        print("bbox[0] 111111111111111111111 : ",bbox)
-        bbox = bbox[0]
-        print("bbox[0] 222222222222222222222 : ",bbox)
-        bboxes_handle[bbox_index]['startX'] = bbox[0] + startX
-        bboxes_handle[bbox_index]['startY'] = bbox[1] + startY
-        bboxes_handle[bbox_index]['width']  = bbox[2] - bbox[0]
-        bboxes_handle[bbox_index]['height'] = bbox[3] - bbox[1]
-        print("bboxes_handle ttttt  : ",bboxes_handle)
+        try:
+            bboxes = results[0].boxes.xyxy.tolist()
+            if(results):
+                cropped_bbox = [startX, startY, width + startX, height + startY]
+                handle_missing_obj = handle_Bbox_Overlapp_at_Missing_Detections()
+                index = handle_missing_obj.get_Relevent_Bbox_at_Missing_detections(cropped_bbox,bboxes)
+                print("bboxes[0] 111111111111111111111 : ",bboxes)
+                bbox=bboxes[index]
+                print("bbox[0] 222222222222222222222 : ",bbox)
+                bboxes_handle[bbox_index]['startX'] = bbox[0] + startX
+                bboxes_handle[bbox_index]['startY'] = bbox[1] + startY
+                bboxes_handle[bbox_index]['width']  = bbox[2] - bbox[0]
+                bboxes_handle[bbox_index]['height'] = bbox[3] - bbox[1]
+                # print("bboxes_handle ttttt  : ",bboxes_handle)
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
         return bboxes_handle
+
+    def delete_Selected_Bbox(self,seleted_bbox_x1_y1, txt_file_path):
+        try:
+            # Read the file and filter lines
+            with open(txt_file_path, 'r') as file:
+                lines = file.readlines()
+                file.close()
+            # Remove lines containing the input pair
+            with open(txt_file_path, 'w') as file:
+                for line in lines:
+                    # Convert line to a list of integers for comparison
+                    values = list(map(float, line.split()))
+                    values = values[1:3]
+                    if round(values[0],2)==round(seleted_bbox_x1_y1[1],2) and round(values[1],2)==round(seleted_bbox_x1_y1[1],2):  # Only keep lines that do not match the input pair
+                        print("line : ",line,"  values : ",values,"  list(seleted_bbox_x1_y1) : ",list(seleted_bbox_x1_y1))
+                        file.write(line)
+                file.close()
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
 
 
     def main_Function_To_get_Data_In_Yolo_Format(self,bboxes_handle):

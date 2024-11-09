@@ -17,12 +17,14 @@
     <p data-image-path="{{ image_path }}" data-image-index="{{ image_index }}"></p>
     <!-- Navbar -->
     <nav>
-        <button id="drawBboxBtn">Draw BBox</button>
-        <button id="SaveBbox">Save BBox</button>
-        <button id="fetchBbox">Show Image</button>
+        <button id="resetDetection">Reset Detection</button>
+        <button id="Annotate_Batch_Img">Annotate Batch</button>
+        <button id="DeleteBbox">Delete BBox</button>
         <button id="prevBtn"><i class="fas fa-arrow-left"></i> Previous</button>
         <button id="nextBtn">Next <i class="fas fa-arrow-right"></i></button>
-        <button id="Annotate_Batch_Img">Annotate Batch</button>
+        <button id="drawBboxBtn">Draw BBox</button>
+        <button id="Save_Bbox_with_Pretrained_Model">Save BBox (YOLO)</button>
+        <button id="SaveBbox">Save BBox</button>
     </nav>
     <canvas id="myCanvas" width="1280" height="720"></canvas>
 </body>

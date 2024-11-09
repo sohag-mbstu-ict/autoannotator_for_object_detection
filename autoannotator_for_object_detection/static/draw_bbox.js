@@ -48,6 +48,10 @@ function drawBbox(bbox) {
 
 
 let mouseX, mouseY;
+let x1,x2,y1,y2
+let has_selected_bbox = false
+let selected_bbox_x = null
+let selected_bbox_y = null
 let bbox_draw_mode_flag = false;
 let startX, startY;
 let isDrawing = false;
@@ -62,13 +66,14 @@ const hoverHandleSize = 15; // Larger size for hovered handle
 
 // Button to enable drawing bbox
 const drawBboxBtn = document.getElementById('drawBboxBtn');
-drawBboxBtn.addEventListener('click', () => {
+    drawBboxBtn.addEventListener('click', () => {
     console.log("Draw Mode clicked clicked clicked clicked");
     mouseX, mouseY = null,null;
     startX, startY = null,null;
     selectedHandle = null;
     isDrawing = false;
     isResizing = false;
+    has_selected_bbox = false
     selectedHandle = null;
     currentBbox = null;
     drawMode = false; // To track whether the "Draw BBox" button is active
@@ -84,16 +89,39 @@ drawBboxBtn.addEventListener('click', () => {
     }
 });
 
+
 // Event listener for mouse movement
 canvas.addEventListener('mousemove', function (e) {
     const rect = canvas.getBoundingClientRect();
     mouseX = e.clientX - rect.left;
     mouseY = e.clientY - rect.top;
-    // console.log("bboxes bboxes bboxes bboxes :  ",bboxes )
-    // console.log("mouseX,mouseY  :  ",mouseX,mouseY )////////////////////////////////////////////////
+    console.log("has_selected_bbox has_selected_bbox has_selected_bbox : ",has_selected_bbox)
+    
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, imgWidth, imgHeight);
-
+    // get selected bbox using mouse clicked 
+    if(currentBbox!==null){
+        x1 = currentBbox.startX
+        y1 = currentBbox.startY
+        x2 = currentBbox.startX + currentBbox.width
+        y2 = currentBbox.startY + currentBbox.height
+        console.log("x1,y1,x2,y2 : ",x1,y1,x2,y2)
+        if ((mouseX >= x1 && mouseX <= x2) && (mouseY >= y1 && mouseY <= y2)) {
+            document.getElementById("myCanvas").addEventListener("click", getSelectedBbox);
+            function getSelectedBbox() {
+                has_selected_bbox = true;
+                selected_bbox_x = x1;
+                selected_bbox_y = y1;
+                }
+        }
+    }
+    // print selected when user select any bbox using mouse click
+    if(has_selected_bbox){
+        ctx.font = '16px Arial';
+        ctx.fillStyle = 'yellow';
+        ctx.fillText('selected', selected_bbox_x, selected_bbox_y-17);
+        }
     // console.log("Inside draw_bbox.js  bboxes 87 : ",bboxes)
     // Draw all bboxes
     bboxes.forEach(bbox => drawBbox(bbox));
@@ -102,6 +130,7 @@ canvas.addEventListener('mousemove', function (e) {
         // Update the dimensions as the user drags to draw the box
         currentBbox.width = mouseX - startX;
         currentBbox.height = mouseY - startY;
+        
 
         // Draw the current bbox being created
         ctx.strokeStyle = 'blue';
@@ -174,7 +203,6 @@ function finalizeBbox() {
     // console.log("drawMode inside finalizeBbox : ", drawMode);
 }
 
-console.log("22222222222222222222222222222 bboxes : ",bboxes)
 
 // Function to draw the bounding box
 function drawBbox(bbox) {
@@ -194,9 +222,9 @@ function drawResizeHandles(bbox) {
         ctx.fillStyle = (handle === hoveredHandle) ? 'red' : 'green';
         ctx.fillRect(handle.x - handleSize / 2, handle.y - handleSize / 2, handleSize, handleSize);
         // currentBbox = bbox
-        // console.log("drawResizeHandles red green bbox    ------- : ",bbox)
-        // console.log("drawResizeHandles red green currentBbox    ------- : ",currentBbox)
     });
+    
+
     // console.log("selectedHandle ------- : ",selectedHandle)
     // resizeBbox()
 }
@@ -287,11 +315,21 @@ function resizeBbox() {
     // currentBbox.handles = getBboxHandles(currentBbox);
 }
 
+ctx.font = '16px Arial';
+ctx.fillStyle = 'red';
+ctx.fillText('draw_bbox', 10, 10);
+
 
 // Function to draw guides (optional dashed lines for precision)
 function drawGuides(x, y) {
+    // Display the "draw_bbox" text near the cursor
+    if(drawMode){
+        ctx.font = '16px Arial';
+        ctx.fillStyle = 'blue';
+        ctx.fillText('draw_bbox', mouseX + 10, mouseY - 10);  // Position text offset from cursor
+        }
     ctx.setLineDash([5, 5]);
-    ctx.strokeStyle = 'blue';
+    ctx.strokeStyle = 'red';
     ctx.beginPath();
     ctx.moveTo(x, 0);
     ctx.lineTo(x, canvas.height);
