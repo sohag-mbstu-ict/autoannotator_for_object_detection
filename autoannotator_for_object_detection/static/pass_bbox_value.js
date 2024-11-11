@@ -1,4 +1,8 @@
 
+let image_size_2x = false
+let image_size_4x = false
+let image_size_normal = true
+
 $(document).ready(function() {
     // Set up button click handler
     $('#SaveBbox').click(function() {
@@ -12,6 +16,9 @@ $(document).ready(function() {
             url: "Save_Bbox/",  // URL to send request to
             data: {
                 "value": valueToSend,
+                "image_size_2x": image_size_2x,
+                "image_size_4x": image_size_4x,
+                "image_size_normal": image_size_normal,
                 "currentImageIndex":currentImageIndex,
                 "currentBbox":JSON.stringify(currentBbox),
                 "bbox_draw_mode_flag":bbox_draw_mode_flag,
@@ -82,9 +89,83 @@ $(document).ready(function() {
                 // Access the list from the response
                 bboxes = response.bbox_list;
                 bboxes = Object.values(bboxes);
-                console.log("111111111111111111List from Django:", bboxes,"currentImageIndex : ",currentImageIndex);
                 bboxes.forEach(bbox => drawBbox(bbox));
-                console.log("222222222222222222List from Django:", bboxes);
+            },
+            error: function(error) {
+                console.error("Error fetching list:", error);
+            }
+        });
+    });
+});
+
+$(document).ready(function() {
+    $('#Zoom4X').click(function() {
+        // AJAX POST request to Django
+        $.ajax({
+            type: "POST",
+            dataType: 'json', 
+            url: "Zoom4X/",  // Django URL to fetch the list
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}"  // CSRF token for POST requests
+            },
+            data: {
+                    currentImageIndex: currentImageIndex,
+                    csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val()  // CSRF token for Django
+                    },
+            success: function(response) {
+                image_size_2x = false;
+                handleSize = 12;
+                hoverHandleSize = 12;
+                image_size_4x = true;
+                image_size_normal = false;
+                img.src = response.image_path
+                imgWidth = 1280*4;
+                imgHeight = 720*4;
+                console.log("Image Width:", img.naturalWidth);
+                console.log("Image Height:", img.naturalHeight);
+                bboxes = response.bbox_list;
+                bboxes = Object.values(bboxes);
+                console.log("zoom4x zoom4x zoom4x zoom4x zoom4x zoom4x zoom4x zoom4x bboxes : ",bboxes);
+                bboxes.forEach(bbox => drawBbox(bbox));
+            },
+            error: function(error) {
+                console.error("Error fetching list:", error);
+            }
+        });
+    });
+});
+
+
+
+$(document).ready(function() {
+    $('#Zoom2X').click(function() {
+        // AJAX POST request to Django
+        $.ajax({
+            type: "POST",
+            dataType: 'json', 
+            url: "Zoom2X/",  // Django URL to fetch the list
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}"  // CSRF token for POST requests
+            },
+            data: {
+                    currentImageIndex: currentImageIndex,
+                    csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val()  // CSRF token for Django
+                    },
+            success: function(response) {
+                handleSize = 4*2;
+                hoverHandleSize = 4*2;
+                image_size_2x = true;
+                image_size_4x = false;
+                image_size_normal = false;
+                img.src = response.image_path
+                imgWidth = 1280*2;
+                imgHeight = 720*2;
+                console.log("Image Width:", img.naturalWidth);
+                console.log("Image Height:", img.naturalHeight);
+                console.log("zoom2x zoom2x zoom2x zoom2x zoom2x zoom2x zoom2x zoom2x");
+                bboxes = response.bbox_list;
+                bboxes = Object.values(bboxes);
+                bboxes.forEach(bbox => drawBbox(bbox));
             },
             error: function(error) {
                 console.error("Error fetching list:", error);
@@ -119,6 +200,13 @@ $(document).ready(function() {
     }
     // Next Button Click: Increase the index
     $('#nextBtn').click(function() {
+        image_size_2x = false;
+        image_size_4x = false;
+        handleSize = 4;
+        hoverHandleSize = 4;
+        image_size_normal = true;
+        imgWidth = 1280;
+        imgHeight = 720;
         has_selected_bbox = false
         currentImageIndex += 1;
         console.log("Next image index:", currentImageIndex);
@@ -127,7 +215,14 @@ $(document).ready(function() {
     // Previous Button Click: Decrease the index
     $('#prevBtn').click(function() {
         if (currentImageIndex > 0) {
-            has_selected_bbox = false
+            handleSize = 4;
+            hoverHandleSize = 4;
+            image_size_2x = false;
+            image_size_4x = false;
+            image_size_normal = true;
+            imgWidth = 1280;
+            imgHeight = 720;
+            has_selected_bbox = false;
             currentImageIndex -= 1;
             console.log("Previous image index:", currentImageIndex);
             sendImageIndexToDjango(currentImageIndex);  // Send updated index to Django
@@ -135,6 +230,23 @@ $(document).ready(function() {
             console.log("Already at the first image.");
         }
     });
+
+    $('#Normal').click(function() {
+        if (currentImageIndex > 0) {
+            handleSize = 4;
+            hoverHandleSize = 4;
+            image_size_2x = false;
+            image_size_4x = false;
+            image_size_normal = true;
+            imgWidth = 1280;
+            imgHeight = 720;
+            has_selected_bbox = false;
+            sendImageIndexToDjango(currentImageIndex);  // Send updated index to Django
+        } else {
+            console.log("Already at the first image.");
+        }
+    });
+
 });
 
 //                              For refresh the page

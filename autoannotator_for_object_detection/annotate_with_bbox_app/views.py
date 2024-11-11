@@ -9,12 +9,12 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt  # Import csrf_exempt
 from annotate_with_bbox_app.yolo_format import get_Data_In_Yolo_Format
 yolo_data_obj = get_Data_In_Yolo_Format()
-model_detection = YOLO('yolov8n.pt')
+model_detection = YOLO('yolov8x.pt')
 
 
 
 def draw_bbox(request):
-    cap = cv2.VideoCapture("media/tennis.mp4")
+    cap = cv2.VideoCapture("media/voleyball.mp4")
     frame_count = 0
     while True:
         ret, frame = cap.read()
@@ -35,10 +35,14 @@ def Save_Bbox(request):
         # Get the value sent via AJAX
         bboxes_handle = request.POST.get("value")
         currentImageIndex = request.POST.get("currentImageIndex")
+        image_size_2x = request.POST.get("image_size_2x")
+        image_size_4x = request.POST.get("image_size_4x")
+        image_size_normal = request.POST.get("image_size_normal")
+
         txt_file_path = "media/labels/" + currentImageIndex + ".txt"
         # Process the value (optional)
         bboxes_handle = json.loads(bboxes_handle)
-        yolo_data_obj.save_BBox_On_Text_File(txt_file_path,bboxes_handle)
+        yolo_data_obj.save_BBox_On_Text_File(txt_file_path,bboxes_handle,image_size_2x,image_size_4x)
         bboxes = yolo_data_obj.get_BBox_From_Text_File(txt_file_path)
         bboxes = yolo_data_obj.convert_Yolo_Format_To_BBox_Handles(bboxes)
         return JsonResponse({"bbox_list": bboxes})
@@ -53,6 +57,7 @@ def Save_Bbox_with_Pretrained_Model(request):
         currentImageIndex = request.POST.get("currentImageIndex")
         bbox_draw_mode_flag = request.POST.get("bbox_draw_mode_flag")
         currentBbox = request.POST.get("currentBbox")
+
         txt_file_path = "media/labels/" + currentImageIndex + ".txt"
         image_path    = "media/images/" + currentImageIndex + ".png"
         # Process the value (optional)
@@ -82,9 +87,51 @@ def resetDetection(request):
         bboxes = results[0].boxes.xyxy.tolist()
         bboxes = yolo_data_obj.remove_Detections_Based_On_Court_Coordinates(bboxes)
         yolo_data_obj.save_Bbox_From_YOLO_model(bboxes,txt_file_path)
+        bboxes = yolo_data_obj.get_BBox_From_Text_File(txt_file_path)
+        bboxes = yolo_data_obj.convert_Yolo_Format_To_BBox_Handles(bboxes)
         return JsonResponse({'image_path': image_path, 'bbox_list': bboxes})
     return JsonResponse({'error': 'Invalid request method'}, status=400)
     
+
+@csrf_exempt  # Only for testing without CSRF; remove in production if possible
+def Zoom_4X(request):
+    if request.method == 'POST':
+        # Get the `currentImageIndex` from the AJAX request
+        current_image_index = int(request.POST.get('currentImageIndex', 0))
+        print("update_image_index  current_image_index : ",current_image_index)
+        current_image_index
+        image_path    = "media/images/" + str(current_image_index) + ".png"
+        txt_file_path = "media/labels/" + str(current_image_index) + ".txt"
+        bboxes = yolo_data_obj.get_BBox_From_Text_File(txt_file_path)
+        for index,bbox in enumerate(bboxes):
+            bboxes[index][0] *= 4
+            bboxes[index][1] *= 4
+            bboxes[index][2] *= 4
+            bboxes[index][3] *= 4
+        bboxes = yolo_data_obj.convert_Yolo_Format_To_BBox_Handles(bboxes)
+        return JsonResponse({'image_path': image_path, 'bbox_list': bboxes})
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
+@csrf_exempt  # Only for testing without CSRF; remove in production if possible
+def Zoom_2X(request):
+    if request.method == 'POST':
+        # Get the `currentImageIndex` from the AJAX request
+        current_image_index = int(request.POST.get('currentImageIndex', 0))
+        print("update_image_index  current_image_index : ",current_image_index)
+        current_image_index
+        image_path    = "media/images/" + str(current_image_index) + ".png"
+        txt_file_path = "media/labels/" + str(current_image_index) + ".txt"
+        bboxes = yolo_data_obj.get_BBox_From_Text_File(txt_file_path)
+        for index,bbox in enumerate(bboxes):
+            bboxes[index][0] *= 2
+            bboxes[index][1] *= 2
+            bboxes[index][2] *= 2
+            bboxes[index][3] *= 2
+        bboxes = yolo_data_obj.convert_Yolo_Format_To_BBox_Handles(bboxes)
+        return JsonResponse({'image_path': image_path, 'bbox_list': bboxes})
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
 
 @csrf_exempt  # Only for testing without CSRF; remove in production if possible
 def DeleteBbox(request):
@@ -129,8 +176,8 @@ def auto_Annotate_Next_N_Frames(request):
     if request.method == 'POST':
         # Get the `currentImageIndex` from the AJAX request
         current_image_index = int(request.POST.get('currentImageIndex', 0))
-        current_image_index_batch = current_image_index + 12
-        cap = cv2.VideoCapture("media/tennis.mp4")
+        current_image_index_batch = current_image_index + 30
+        cap = cv2.VideoCapture("media/voleyball.mp4")
         frame_count = 0
         write_current_image_index = current_image_index
         image_extensions = ('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.webp')
@@ -140,7 +187,7 @@ def auto_Annotate_Next_N_Frames(request):
         while True:
             ret, frame = cap.read()
             frame_count=frame_count+1 
-            cv2.putText(frame, "frame: " + str(write_current_image_index), (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            cv2.putText(frame, "frame: " + str(write_current_image_index), (7, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 1)
             write_current_image_index+=1
             if(frame_count>current_image_index_batch):
                 break 

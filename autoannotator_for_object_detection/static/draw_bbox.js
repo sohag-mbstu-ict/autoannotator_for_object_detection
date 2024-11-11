@@ -17,8 +17,8 @@ $(document).ready(function() {
 });
 
 
-const imgWidth = 1280;
-const imgHeight = 720;
+let imgWidth = 1280;
+let imgHeight = 720;
 
 // Once the image is loaded, draw it on the canvas and set up the event listeners
 img.onload = function () {
@@ -61,8 +61,8 @@ let bboxes = []; // Store all bounding boxes
 let selectedHandle = null;
 let drawMode = false; // To track whether the "Draw BBox" button is active
 let hoveredHandle = null; // To track the currently hovered handle
-const handleSize = 10;
-const hoverHandleSize = 15; // Larger size for hovered handle
+let handleSize = 4;
+let hoverHandleSize = 4; // Larger size for hovered handle
 
 // Button to enable drawing bbox
 const drawBboxBtn = document.getElementById('drawBboxBtn');
@@ -329,7 +329,7 @@ function drawGuides(x, y) {
         ctx.fillText('draw_bbox', mouseX + 10, mouseY - 10);  // Position text offset from cursor
         }
     ctx.setLineDash([5, 5]);
-    ctx.strokeStyle = 'red';
+    ctx.strokeStyle = 'gray';
     ctx.beginPath();
     ctx.moveTo(x, 0);
     ctx.lineTo(x, canvas.height);

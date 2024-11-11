@@ -8,18 +8,42 @@ class get_Data_In_Yolo_Format:
     def __init__(self):
         pass
 
-    def save_BBox_On_Text_File(self,txt_file_path,bboxes_handle): # when we click saveBbox from browser    
+    def save_BBox_On_Text_File(self,txt_file_path,bboxes_handle,image_size_2x,image_size_4x): # when we click saveBbox from browser    
         try:
-            with open(txt_file_path, 'w') as file_:
-                for index,bbox_handle in enumerate(bboxes_handle):
-                    x1 = bbox_handle['startX'] / 1280
-                    y1 = bbox_handle['startY'] / 720
-                    x2 = bbox_handle['width'] / 1280
-                    y2 = bbox_handle['height'] / 720
-                    file_.write(f"{0} {x1} {y1} {x2} {y2}")
-                    if(index+1 < len(bboxes_handle)):
-                        file_.write("\n")
-                file_.close()
+            if(image_size_2x=='true'):
+                with open(txt_file_path, 'w') as file_:
+                    for index,bbox_handle in enumerate(bboxes_handle):
+                        x1 = (bbox_handle['startX']/2) / 1280
+                        y1 = (bbox_handle['startY']/2) / 720
+                        x2 = (bbox_handle['width']/2) / 1280
+                        y2 = (bbox_handle['height']/2) / 720
+                        file_.write(f"{0} {x1} {y1} {x2} {y2}")
+                        if(index+1 < len(bboxes_handle)):
+                            file_.write("\n")
+                    file_.close()
+
+            elif(image_size_4x=='true'):
+                with open(txt_file_path, 'w') as file_:
+                    for index,bbox_handle in enumerate(bboxes_handle):
+                        x1 = (bbox_handle['startX']/4) / 1280
+                        y1 = (bbox_handle['startY']/4) / 720
+                        x2 = (bbox_handle['width']/4) / 1280
+                        y2 = (bbox_handle['height']/4) / 720
+                        file_.write(f"{0} {x1} {y1} {x2} {y2}")
+                        if(index+1 < len(bboxes_handle)):
+                            file_.write("\n")
+                    file_.close()
+            else:
+                with open(txt_file_path, 'w') as file_:
+                    for index,bbox_handle in enumerate(bboxes_handle):
+                        x1 = bbox_handle['startX'] / 1280
+                        y1 = bbox_handle['startY'] / 720
+                        x2 = bbox_handle['width'] / 1280
+                        y2 = bbox_handle['height'] / 720
+                        file_.write(f"{0} {x1} {y1} {x2} {y2}")
+                        if(index+1 < len(bboxes_handle)):
+                            file_.write("\n")
+                    file_.close()
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
 
@@ -77,7 +101,7 @@ class get_Data_In_Yolo_Format:
                                 save=False,
                                 conf=0.5,
                                 iou=0.8,
-                                classes=[0],
+                                classes=[32],
                                 imgsz=1280)
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
@@ -139,7 +163,7 @@ class get_Data_In_Yolo_Format:
                                 save=False,
                                 conf=0.10,
                                 iou=0.8,
-                                classes=[0])
+                                classes=[32])
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
         # cv2.imshow('Cropped Image', results[0].plot())       # Display the cropped image
