@@ -247,6 +247,28 @@ $(document).ready(function() {
         }
     });
 
+    $(document).ready(function() {
+        // Handle search button click
+        $('#searchBtn').on('click', function() {
+            let searchTerm = $('#searchInput').val();
+            console.log("search searchTerm : ",searchTerm,"  ",typeof(searchTerm))
+            if (searchTerm) {
+                handleSize = 4;
+                hoverHandleSize = 4;
+                image_size_2x = false;
+                image_size_4x = false;
+                image_size_normal = true;
+                imgWidth = 1280;
+                imgHeight = 720;
+                has_selected_bbox = false;
+                searchTerm = Number(searchTerm)
+                sendImageIndexToDjango(searchTerm+1);  // Send updated index to Django
+            } else {
+                alert('Please enter a search term.');
+            }
+        });
+    });
+
 });
 
 //                              For refresh the page
@@ -334,6 +356,14 @@ $(document).ready(function() {
     });
 });
 
+
+    $(document).ready(function() {
+        // When the "Upload" button is clicked, navigate to another HTML page
+        $('#uploadBtn').on('click', function() {
+            // Redirect to another HTML page (change 'upload.html' to your desired page)
+            window.location.href = '/upload/';
+        });
+    });
 
 
 // jQuery to change button color on click

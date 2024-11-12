@@ -17,3 +17,28 @@ button {
 button:hover {
     background-color: #45a049;
 }
+
+
+
+/* search button  */
+.search-container {
+    position: relative;
+    display: inline-block;
+}
+
+#searchInput {
+    padding-left: 25px;  /* Adjust to make space for the icon */
+    margin-right: 5px;  /* Spacing adjustment if needed */
+    height: 28px;  /* Adjust height if needed */
+    width: 50px;  /* Set the desired width */
+}
+
+.search-icon {
+    position: absolute;
+    left: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;  /* Adjust icon size */
+    color: gray;  /* Icon color */
+    pointer-events: none;  /* Make sure the icon doesn't interfere with input */
+}
