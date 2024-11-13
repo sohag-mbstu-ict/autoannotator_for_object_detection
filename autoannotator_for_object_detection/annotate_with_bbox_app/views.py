@@ -37,16 +37,16 @@ def upload_video(request):
             return HttpResponse("Video uploaded successfully!")
         else:
             return HttpResponse("Failed to upload video. Please provide all required fields.")
-    
     return render(request, 'upload.html')  # 'upload.html' is the template containing the form
 
 def draw_bbox(request):
-    last_video = Video.objects.order_by('-id').first()
-    last_video.video_file.name
-    if last_video:
-        # Construct the full path to the video file
-        video_path = last_video.video_file.name
-    print("video_path : ",video_path)
+    # last_video = Video.objects.order_by('-id').first()
+    # last_video.video_file.name
+    # if last_video:
+    #     # Construct the full path to the video file
+    #     video_path = last_video.video_file.name
+    # print("video_path : ",video_path)
+    video_path = "media/voleyball.mp4"
     cap = cv2.VideoCapture(video_path)
     frame_count = 0
     while True:
@@ -58,7 +58,13 @@ def draw_bbox(request):
         break 
     image_path = "media/images/" + str(frame_count) + ".png"
     success = cv2.imwrite(image_path, frame)
-    return render(request, 'draw_bbox.html', {'image_path': image_path,'image_index': frame_count})
+    cv2.imshow("s",frame)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    # Encode the image to bytes and then to Base64
+    _, buffer = cv2.imencode('.jpg', frame)
+    image_base64 = base64.b64encode(buffer).decode('utf-8')
+    return render(request, 'draw_bbox.html', {'image': image_base64,'image_index': frame_count})
 
 
 @csrf_exempt  # You may want to configure CSRF token handling for production

@@ -11,7 +11,9 @@ const img = new Image();
 // fetch the images
 $(document).ready(function() {
     // Access the image path from the `data-image-path` attribute on the <body> tag
+    console.log("currentImageIndex : 1111111111111111111111111111111111")
     img.src = $('p').data('image-path');
+    console.log("currentImageIndex : 2222222222222222222222222222222222")
     currentImageIndex = $('p').data('image-index');
     console.log("currentImageIndex : ",currentImageIndex)
 });
