@@ -4,7 +4,7 @@ import json
 import cv2
 import base64
 from django.conf import settings
-from ultralytics import YOLO
+# from ultralytics import YOLO
 import os
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt  # Import csrf_exempt
@@ -20,7 +20,7 @@ class VideoViewSet(viewsets.ModelViewSet):
 
 
 yolo_data_obj = get_Data_In_Yolo_Format()
-model_detection = YOLO('yolov8x.pt')
+model_detection = model = torch.hub.load("ultralytics/yolov8", "yolov8s")
 
 def upload_page(request):
     return render(request, 'upload.html')  # Assumes `upload.html` is in your templates folder
