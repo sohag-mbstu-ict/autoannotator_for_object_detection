@@ -94,14 +94,13 @@ class get_Data_In_Yolo_Format:
         return bboxes
     
     
-    def get_Detections(self, image_path,model_detection):  # object detection using yolov8x
+    def get_Detections(self, frame,model_detection):  # object detection using yolov8x
         try:
-            frame = cv2.imread(image_path)
             results = model_detection.predict(frame,   
                                 save=False,
                                 conf=0.5,
                                 iou=0.8,
-                                classes=[32],
+                                classes=[0,32],
                                 imgsz=1280)
         except Exception as e:
             print(f"An unexpected error occurred: {e}")

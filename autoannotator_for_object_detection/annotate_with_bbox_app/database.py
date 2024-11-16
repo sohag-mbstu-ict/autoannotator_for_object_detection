@@ -116,20 +116,20 @@ class database_For_BBox_Annotation:
 
             
 
-database_obj = database_For_BBox_Annotation()
-# Call the create table method	 
-# database_obj.create_table() 
-img = cv2.imread("D:/Annotator/autoannotator_bbox/media/images/3.png")
-# Convert the image to bytes using OpenCV and numpy
-_, buffer = cv2.imencode('.png', img)  # Use .png, .jpg, etc., as needed
-image_bytes = buffer.tobytes()  # Convert the buffer to bytes
-txt = "D:/Annotator/autoannotator_bbox/media/labels/3.txt"
-with open(txt, 'rb') as text_file:
-        text_data = text_file.read()
+# database_obj = database_For_BBox_Annotation()
+# # Call the create table method	 
+# # database_obj.create_table() 
+# img = cv2.imread("D:/Annotator/autoannotator_bbox/media/images/3.png")
+# # Convert the image to bytes using OpenCV and numpy
+# _, buffer = cv2.imencode('.png', img)  # Use .png, .jpg, etc., as needed
+# image_bytes = buffer.tobytes()  # Convert the buffer to bytes
+# txt = "D:/Annotator/autoannotator_bbox/media/labels/3.txt"
+# with open(txt, 'rb') as text_file:
+#         text_data = text_file.read()
 # Prepare sample data, of images, from local drive 
 # database_obj.write_blob(1,image_bytes,text_data) 
 # database_obj.retrieve_data()
-database_obj.delete_database()
+# database_obj.delete_database()
 a=4
 
 

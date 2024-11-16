@@ -4,11 +4,12 @@ import json
 import cv2
 import base64
 from django.conf import settings
-# from ultralytics import YOLO
+from ultralytics import YOLO
 import os
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt  # Import csrf_exempt
 from annotate_with_bbox_app.yolo_format import get_Data_In_Yolo_Format
+from annotate_with_bbox_app.database import database_For_BBox_Annotation
 
 from rest_framework import viewsets
 from .models import Video
@@ -20,7 +21,8 @@ class VideoViewSet(viewsets.ModelViewSet):
 
 
 yolo_data_obj = get_Data_In_Yolo_Format()
-model_detection = model = torch.hub.load("ultralytics/yolov8", "yolov8s")
+model_detection = YOLO('yolov8x.pt')
+database_obj = database_For_BBox_Annotation()
 
 def upload_page(request):
     return render(request, 'upload.html')  # Assumes `upload.html` is in your templates folder
@@ -210,12 +212,13 @@ def update_image_index(request):
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 
+
 @csrf_exempt 
 def auto_Annotate_Next_N_Frames(request):
     if request.method == 'POST':
         # Get the `currentImageIndex` from the AJAX request
         current_image_index = int(request.POST.get('currentImageIndex', 0))
-        current_image_index_batch = current_image_index + 30
+        current_image_index_batch = current_image_index + 7
         cap = cv2.VideoCapture("media/voleyball.mp4")
         frame_count = 0
         write_current_image_index = current_image_index
@@ -223,6 +226,8 @@ def auto_Annotate_Next_N_Frames(request):
         folder_path = "media/images/"
         # List all files in the directory and filter for image files
         image_names = [f for f in os.listdir(folder_path) if f.lower().endswith(image_extensions)]
+        # database_obj.delete_database()
+        database_obj.create_table() 
         while True:
             ret, frame = cap.read()
             frame_count=frame_count+1 
@@ -230,22 +235,33 @@ def auto_Annotate_Next_N_Frames(request):
             write_current_image_index+=1
             if(frame_count>current_image_index_batch):
                 break 
-            if(frame_count%10==0):
-                print("--------------- frame_count ------------------ : ",frame_count)
-            image_path    = "media/images/" + str(frame_count) + ".png"
-            txt_file_path = "media/labels/" + str(frame_count) + ".txt"
+            # if(frame_count%10==0):
+            print("--------------- frame_count ------------------ : ",frame_count)
+            # image_path    = "media/images/" + str(frame_count) + ".png"
+            # txt_file_path = "media/labels/" + str(frame_count) + ".txt"
+
+            image_path    = "media/images/" + "ref.png"
+            txt_file_path = "media/labels/" + "ref.txt"
             image_to_check = str(frame_count) + ".png"
-            if image_to_check in image_names:
-                continue
-            success = cv2.imwrite(image_path, frame)
-            results = yolo_data_obj.get_Detections(image_path,model_detection)
+            # if image_to_check in image_names:
+            #     continue
+            # success = cv2.imwrite(image_path, frame)
+            results = yolo_data_obj.get_Detections(frame,model_detection)
             # cv2.imshow("s",results[0].plot())
             # cv2.waitKey(0)
             # cv2.destroyAllWindows()
             bboxes = results[0].boxes.xyxy.tolist()
             bboxes = yolo_data_obj.remove_Detections_Based_On_Court_Coordinates(bboxes)
             yolo_data_obj.save_Bbox_From_YOLO_model(bboxes,txt_file_path)
+            # # Convert the image to bytes using OpenCV and numpy
+            _, buffer = cv2.imencode(str(frame_count) + '.png', frame)  # Use .png, .jpg, etc., as needed
+            image_bytes = buffer.tobytes()  # Convert the buffer to bytes
+            with open(txt_file_path, 'rb') as text_file:
+                text_data = text_file.read()
+            # Prepare sample data, of images, from local drive 
+            database_obj.write_blob(frame_count,image_bytes,text_data) 
             bboxes
         return JsonResponse({'message': 'Index received', 'current_image_index': current_image_index})
     return JsonResponse({'error': 'Invalid request method'}, status=400)
+
 
